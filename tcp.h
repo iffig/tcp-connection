@@ -12,6 +12,7 @@
 #define SOCKET_BIND_FAILURE   -3
 #define SOCKET_LISTEN_FAILURE -4
 #define CLIENT_ACCEPT_FAILURE -5
+#define CLIENT_CONNECT_FAILURE -6
 #define MAX 80
 
 #define SA struct sockaddr
