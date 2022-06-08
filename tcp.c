@@ -1,32 +1,53 @@
 #include "tcp.h"
+#include "stdbool.h"
+
+void chat(int id, bool init){
+    char buff[MAX];
+    int n;
+    
+    if(init){
+        fprintf(stderr, "Message to Send: ");
+        n = 0;
+        while ((buff[n++] = getchar()) != '\n');
+        write(id, buff, sizeof(buff));
+        bzero(buff, sizeof(buff));
+    }
+    while(1) {
+        /*Receive*/
+        bzero(buff, MAX);
+        read(id, buff, sizeof(buff));
+
+        fprintf(stderr, "Received: %s", buff);
+        if (strncmp("exit", buff, 4) == 0) {
+            printf("Exiting...\n");
+            break;
+        }
+        /*Response*/
+        fprintf(stderr, "\tMessage to Send : ", buff);
+        bzero(buff, MAX);
+        n = 0;
+        while ((buff[n++] = getchar()) != '\n');
+   
+        write(id, buff, sizeof(buff));
+        if (strncmp("exit", buff, 4) == 0) {
+            printf("Exiting...\n");
+            break;
+        }
+    }
+}
 
 int receive(int socket_id) {
     sockaddr_in cli;
     int len = sizeof(cli);
-    char buff[MAX];
-    int n;
 
-    int connfd = accept(socket_id, (SA*)&cli, &len);
-    if (connfd < 0) {
+    int connection_id = accept(socket_id, (SA*)&cli, &len);
+    if (connection_id < 0) {
         fprintf(stderr, "Failed to accept client.\n");
         return(CLIENT_ACCEPT_FAILURE);
     }
     fprintf(stderr, "Client accepted.\n");
 
-    while(1) {
-        bzero(buff, MAX);
-        read(connfd, buff, sizeof(buff));
-        fprintf(stderr, "From client: %s\t To client : ", buff);
-        bzero(buff, MAX);
-        n = 0;
-        while ((buff[n++] = getchar()) != '\n');
-   
-        write(connfd, buff, sizeof(buff));
-           if (strncmp("exit", buff, 4) == 0) {
-            printf("Server Exit...\n");
-            break;
-        }
-    }
+    chat(connection_id, false);
 }
 
 sockaddr_in get_socket_address(char *ip, int port){
@@ -81,26 +102,6 @@ int create_client_socket(char *ip, int port){
     return(socket_id);
 }
 
-void client_send(int sockfd){
-    char buff[MAX];
-    int n;
-    for (;;) {
-        bzero(buff, sizeof(buff));
-        fprintf(stderr, "Enter the string : ");
-        n = 0;
-        while ((buff[n++] = getchar()) != '\n')
-            ;
-        write(sockfd, buff, sizeof(buff));
-        bzero(buff, sizeof(buff));
-        read(sockfd, buff, sizeof(buff));
-        fprintf(stderr, "From Server : %s", buff);
-        if ((strncmp(buff, "exit", 4)) == 0) {
-            fprintf(stderr, "Client Exit...\n");
-            break;
-        }
-    }
-}
-
 void run_server(char *ip, int port){
     int socket_id = create_server_socket(ip, port);
     if(socket_id < 0){
@@ -115,6 +116,6 @@ void run_client(char *ip, int port){
     if(socket_id < 0){
         return; 
     }
-    client_send(socket_id);
+    chat(socket_id, true);
     close(socket_id);
 }
